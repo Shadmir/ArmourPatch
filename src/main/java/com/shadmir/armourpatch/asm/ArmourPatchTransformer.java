@@ -69,13 +69,13 @@ public class ArmourPatchTransformer implements IClassTransformer {
      *
      * Bytecode pattern immediately before INVOKESPECIAL ArmorProperties.<init>(IDI)V,
      * listed closest-to-anchor first:
-     * real[0] ALOAD (armor local var)
-     * real[1] INVOKEVIRTUAL getMaxDamage ()I
-     * real[2] ICONST_1
+     * real[0] ISUB
+     * real[1] INVOKEVIRTUAL getItemDamage ()I
+     * real[2] ALOAD (stack local var)
      * real[3] IADD
-     * real[4] ALOAD (stack local var)
-     * real[5] INVOKEVIRTUAL getItemDamage ()I
-     * real[6] ISUB
+     * real[4] ICONST_1
+     * real[5] INVOKEVIRTUAL getMaxDamage ()I
+     * real[6] ALOAD (armor local var)
      *
      * Replacement: GETSTATIC java/lang/Integer.MAX_VALUE I
      *
@@ -90,7 +90,8 @@ public class ArmourPatchTransformer implements IClassTransformer {
             if (node.getOpcode() == Opcodes.INVOKESPECIAL) {
                 MethodInsnNode min = (MethodInsnNode) node;
                 if (TARGET_INTERNAL.equals(min.owner)) {
-                    ArmourPatchPlugin.LOG.info("[ArmourPatch] Found INVOKESPECIAL {}.{}{}", min.owner, min.name, min.desc);
+                    ArmourPatchPlugin.LOG
+                        .info("[ArmourPatch] Found INVOKESPECIAL {}.{}{}", min.owner, min.name, min.desc);
                 }
             }
         }
@@ -114,20 +115,21 @@ public class ArmourPatchTransformer implements IClassTransformer {
                 AbstractInsnNode n = real[k];
                 if (n instanceof MethodInsnNode) {
                     MethodInsnNode mn = (MethodInsnNode) n;
-                    ArmourPatchPlugin.LOG.info("[ArmourPatch] real[{}] opcode={} {}.{}{}", k, n.getOpcode(), mn.owner, mn.name, mn.desc);
+                    ArmourPatchPlugin.LOG
+                        .info("[ArmourPatch] real[{}] opcode={} {}.{}{}", k, n.getOpcode(), mn.owner, mn.name, mn.desc);
                 } else {
                     ArmourPatchPlugin.LOG.info("[ArmourPatch] real[{}] opcode={}", k, n.getOpcode());
                 }
             }
 
             // Validate the pattern.
-            if (!isAload(real[0])) continue;
-            if (!isInvokeVirtual(real[1])) continue; // getMaxDamage()
-            if (real[2].getOpcode() != Opcodes.ICONST_1) continue;
+            if (real[0].getOpcode() != Opcodes.ISUB) continue;
+            if (!isInvokeVirtual(real[1])) continue; // getItemDamage()
+            if (!isAload(real[2])) continue;
             if (real[3].getOpcode() != Opcodes.IADD) continue;
-            if (!isAload(real[4])) continue;
-            if (!isInvokeVirtual(real[5])) continue; // getItemDamage()
-            if (real[6].getOpcode() != Opcodes.ISUB) continue;
+            if (real[4].getOpcode() != Opcodes.ICONST_1) continue;
+            if (!isInvokeVirtual(real[5])) continue; // getMaxDamage()
+            if (!isAload(real[6])) continue;
 
             // Pattern confirmed. Insert Integer.MAX_VALUE before real[0], then remove real[0..6].
             insns.insertBefore(real[0], new FieldInsnNode(Opcodes.GETSTATIC, "java/lang/Integer", "MAX_VALUE", "I"));
