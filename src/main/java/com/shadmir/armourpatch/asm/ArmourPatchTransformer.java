@@ -85,6 +85,16 @@ public class ArmourPatchTransformer implements IClassTransformer {
         InsnList insns = method.instructions;
         AbstractInsnNode[] arr = insns.toArray();
 
+        // First pass: log every INVOKESPECIAL targeting ArmorProperties so we can see the actual descriptor.
+        for (AbstractInsnNode node : arr) {
+            if (node.getOpcode() == Opcodes.INVOKESPECIAL) {
+                MethodInsnNode min = (MethodInsnNode) node;
+                if (TARGET_INTERNAL.equals(min.owner)) {
+                    ArmourPatchPlugin.LOG.info("[ArmourPatch] Found INVOKESPECIAL {}.{}{}", min.owner, min.name, min.desc);
+                }
+            }
+        }
+
         for (int i = arr.length - 1; i >= 7; i--) {
             AbstractInsnNode anchor = arr[i];
 
@@ -98,6 +108,17 @@ public class ArmourPatchTransformer implements IClassTransformer {
             // Collect the 7 real instructions immediately preceding the anchor.
             AbstractInsnNode[] real = collectPreceding(arr, i, 7);
             if (real == null) continue;
+
+            // Log what we actually see before the constructor call.
+            for (int k = real.length - 1; k >= 0; k--) {
+                AbstractInsnNode n = real[k];
+                if (n instanceof MethodInsnNode) {
+                    MethodInsnNode mn = (MethodInsnNode) n;
+                    ArmourPatchPlugin.LOG.info("[ArmourPatch] real[{}] opcode={} {}.{}{}", k, n.getOpcode(), mn.owner, mn.name, mn.desc);
+                } else {
+                    ArmourPatchPlugin.LOG.info("[ArmourPatch] real[{}] opcode={}", k, n.getOpcode());
+                }
+            }
 
             // Validate the pattern.
             if (!isAload(real[0])) continue;
