@@ -9,7 +9,12 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
-@Mod(modid = ArmourPatch.MODID, version = Tags.VERSION, name = "ArmourPatch", acceptedMinecraftVersions = "[1.7.10]", acceptableRemoteVersions = "*")
+@Mod(
+    modid = ArmourPatch.MODID,
+    version = Tags.VERSION,
+    name = "ArmourPatch",
+    acceptedMinecraftVersions = "[1.7.10]",
+    acceptableRemoteVersions = "*")
 public class ArmourPatch {
 
     public static final String MODID = "armourpatch";
