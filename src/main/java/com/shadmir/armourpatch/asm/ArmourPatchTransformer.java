@@ -1,6 +1,7 @@
 package com.shadmir.armourpatch.asm;
 
 import net.minecraft.launchwrapper.IClassTransformer;
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -14,12 +15,12 @@ import org.objectweb.asm.tree.MethodNode;
 public class ArmourPatchTransformer implements IClassTransformer {
 
     // Forge class — never obfuscated regardless of environment.
-    private static final String TARGET_CLASS    = "net.minecraftforge.common.ISpecialArmor$ArmorProperties";
+    private static final String TARGET_CLASS = "net.minecraftforge.common.ISpecialArmor$ArmorProperties";
     private static final String TARGET_INTERNAL = "net/minecraftforge/common/ISpecialArmor$ArmorProperties";
-    private static final String TARGET_METHOD   = "ApplyArmor";
+    private static final String TARGET_METHOD = "ApplyArmor";
     // The 5-argument overload ends with (double damage, boolean applyDamage) -> float.
     // Primitive types are never obfuscated, so this suffix is stable.
-    private static final String DESC_SUFFIX     = "DZ)F";
+    private static final String DESC_SUFFIX = "DZ)F";
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
@@ -46,8 +47,8 @@ public class ArmourPatchTransformer implements IClassTransformer {
         }
 
         if (!patched) {
-            ArmourPatchPlugin.LOG.warn(
-                "[ArmourPatch] Could not find patch site in {}. Armor fix was NOT applied.", TARGET_CLASS);
+            ArmourPatchPlugin.LOG
+                .warn("[ArmourPatch] Could not find patch site in {}. Armor fix was NOT applied.", TARGET_CLASS);
             return basicClass;
         }
 
@@ -63,18 +64,18 @@ public class ArmourPatchTransformer implements IClassTransformer {
      * Finds and replaces the durability-based AbsorbMax calculation in ApplyArmor.
      *
      * The buggy line in source:
-     *   new ArmorProperties(0, (double)armor.damageReduceAmount / 25.0D,
-     *                       armor.getMaxDamage() + 1 - stack.getItemDamage())
+     * new ArmorProperties(0, (double)armor.damageReduceAmount / 25.0D,
+     * armor.getMaxDamage() + 1 - stack.getItemDamage())
      *
      * Bytecode pattern immediately before INVOKESPECIAL ArmorProperties.<init>(IDI)V,
      * listed closest-to-anchor first:
-     *   real[0]  ALOAD   (armor local var)
-     *   real[1]  INVOKEVIRTUAL  getMaxDamage  ()I
-     *   real[2]  ICONST_1
-     *   real[3]  IADD
-     *   real[4]  ALOAD   (stack local var)
-     *   real[5]  INVOKEVIRTUAL  getItemDamage  ()I
-     *   real[6]  ISUB
+     * real[0] ALOAD (armor local var)
+     * real[1] INVOKEVIRTUAL getMaxDamage ()I
+     * real[2] ICONST_1
+     * real[3] IADD
+     * real[4] ALOAD (stack local var)
+     * real[5] INVOKEVIRTUAL getItemDamage ()I
+     * real[6] ISUB
      *
      * Replacement: GETSTATIC java/lang/Integer.MAX_VALUE I
      *
@@ -100,19 +101,19 @@ public class ArmourPatchTransformer implements IClassTransformer {
 
             // Validate the pattern.
             if (!isAload(real[0])) continue;
-            if (!isInvokeVirtual(real[1])) continue;         // getMaxDamage()
+            if (!isInvokeVirtual(real[1])) continue; // getMaxDamage()
             if (real[2].getOpcode() != Opcodes.ICONST_1) continue;
             if (real[3].getOpcode() != Opcodes.IADD) continue;
             if (!isAload(real[4])) continue;
-            if (!isInvokeVirtual(real[5])) continue;         // getItemDamage()
+            if (!isInvokeVirtual(real[5])) continue; // getItemDamage()
             if (real[6].getOpcode() != Opcodes.ISUB) continue;
 
             // Pattern confirmed. Insert Integer.MAX_VALUE before real[0], then remove real[0..6].
-            insns.insertBefore(real[0],
-                new FieldInsnNode(Opcodes.GETSTATIC, "java/lang/Integer", "MAX_VALUE", "I"));
+            insns.insertBefore(real[0], new FieldInsnNode(Opcodes.GETSTATIC, "java/lang/Integer", "MAX_VALUE", "I"));
             for (AbstractInsnNode node : real) insns.remove(node);
 
-            ArmourPatchPlugin.LOG.info("[ArmourPatch] Replaced AbsorbMax durability calculation with Integer.MAX_VALUE.");
+            ArmourPatchPlugin.LOG
+                .info("[ArmourPatch] Replaced AbsorbMax durability calculation with Integer.MAX_VALUE.");
             return true;
         }
         return false;

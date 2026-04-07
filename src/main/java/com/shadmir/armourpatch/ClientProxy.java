@@ -1,3 +1,4 @@
 package com.shadmir.armourpatch;
 
-public class ClientProxy extends CommonProxy {}
+public class ClientProxy extends CommonProxy {
+}

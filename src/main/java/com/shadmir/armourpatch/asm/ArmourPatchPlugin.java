@@ -16,7 +16,7 @@ public class ArmourPatchPlugin implements IFMLLoadingPlugin {
 
     @Override
     public String[] getASMTransformerClass() {
-        return new String[]{ "com.shadmir.armourpatch.asm.ArmourPatchTransformer" };
+        return new String[] { "com.shadmir.armourpatch.asm.ArmourPatchTransformer" };
     }
 
     @Override
